@@ -25,7 +25,7 @@ func jsonStringField(body, field string) string {
 	return s
 }
 
-func strEndsWith(s, suffix string) bool { return strings.HasSuffix(s, suffix) }
+func strEndsWith(s, suffix string) bool   { return strings.HasSuffix(s, suffix) }
 func strStartsWith(s, prefix string) bool { return strings.HasPrefix(s, prefix) }
 
 func strCIContains(haystack, needle string) bool {
