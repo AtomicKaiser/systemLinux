@@ -31,7 +31,7 @@ get -d /tmp/stage -c "--disable-nls" https://example.org/bar-2.0.tgz # staged un
 
 The live ISO deliberately has no compiler or build tools. They are **profiles** you add after installing.
 
-Website: `website/index.html` (also the Handbook) · Download: [GitHub release `v2.0`](https://github.com/tortr-rs/systemLinux/releases/tag/v2.0)
+Website: `website/` (plain HTML; the Handbook is `website/handbook.html`) · Download: [GitHub release `v2.0`](https://github.com/tortr-rs/systemLinux/releases/tag/v2.0)
 
 | File | Size | RAM needed |
 |---|---|---|

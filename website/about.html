@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>systemLinux 2.0: about</title>
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<style>
+body{font-family:monospace;max-width:50em;margin:1em auto;padding:0 1em;line-height:1.4}
+pre{background:#eee;padding:.5em;overflow:auto}
+table{border-collapse:collapse} td,th{border:1px solid #999;padding:.2em .5em;text-align:left;vertical-align:top}
+</style>
+</head>
+<body>
+<h1><img src="logo.svg" alt="" width="32" height="32"> systemLinux 2.0</h1>
+<p><a href="index.html">Home</a> | <b>About</b> | <a href="download.html">Download</a> | <a href="news.html">News</a> | <a href="get.html">get</a> | <a href="handbook.html">Handbook</a> | <a href="system.html">System</a></p>
+<hr>
+<h2>Why communist</h2>
+  <p class="sub">We mean it literally. This is what it means for the code and for the people who use it.</p>
+  <div class="cards">
+    <div class="card"><h3>No owners</h3><p>No company, foundation or founder owns systemLinux. There's no trademark to license and no copyright assignment to sign. The copy you download is as much yours as anyone's.</p></div>
+    <div class="card"><h3>No profit</h3><p>No ads, no telemetry, no accounts, no premium tier. Big Tech makes its money turning your attention into someone else's profit. We don't sell anything, so there's nothing to sell you.</p></div>
+    <div class="card"><h3>From each according to ability, to each according to need</h3><p>Everyone gets the whole system, whether they contribute or not. Write code, test it on your hardware, translate, fix the docs, or just tell us what broke. Donations help, and they buy nothing: no say over the roadmap, no special treatment.</p></div>
+    <div class="card"><h3>Decided in public</h3><p>Decisions happen in the open repository, in issues and pull requests anyone can read and argue with. The people doing the work make the calls, and they answer to the people using it.</p></div>
+    <div class="card"><h3>Against enclosure</h3><p>Free software is a commons, and corporations keep fencing it off: open-core licences, cloud lock-in, "community editions" with the useful parts cut out. We build on the commons and give everything back to it. Nothing here will ever go behind a paywall.</p></div>
+    <div class="card"><h3>Old hardware counts</h3><p>A system that needs a new laptop is a system for people with money. systemLinux runs in about 3&nbsp;GB of RAM, on machines companies have already written off. It only speaks English so far, and we need translators to change that.</p></div>
+  </div>
+<hr>
+<h2>What you get</h2>
+  <p class="sub">A minimal console system. The live ISO is installer media only: kernel plus the bare minimum to install.</p>
+  <div class="cards">
+    <div class="card"><h3>Minimal live ISO</h3><p>The live image is only the kernel and what the installer needs: systemd, NetworkManager, disk and boot tools. No desktop, daemons, firmware bundles, docs or locale packs.</p></div>
+    <div class="card"><h3>Install it yourself</h3><p>The handbook lists every command. If you'd rather not type them, <code>systemlinux-install</code> runs the same steps. Use a whole disk, or a partition you've already freed up. It boots from a USB stick or Ventoy, in UEFI mode.</p></div>
+    <div class="card"><h3>Build what you need</h3><p><code>get URL</code> downloads a source tarball, builds it and installs it where you say. It is a short POSIX shell script you can read in a minute.</p></div>
+    <div class="card"><h3>Plain systemd</h3><p>Services are ordinary systemd units. <code>systemctl</code>, <code>journalctl</code> and <code>loginctl</code> do what you already know they do.</p></div>
+    <div class="card"><h3>Drivers built in</h3><p>One kernel with Intel, AMD and open-source NVIDIA graphics, Wi-Fi, Bluetooth, storage and laptop drivers compiled in, and nothing else.</p></div>
+  </div>
+<hr>
+<h2>What's in the image</h2>
+  <div class="table-scroll"><table>
+    <tr><th>Kernel</th><td>Linux 7.2.6, monolithic, with drivers for almost everything built in (Wi-Fi, Bluetooth, Intel/AMD/open NVIDIA graphics, storage, sound, laptop hardware, exFAT/NTFS/btrfs/XFS); no firmware bundled</td></tr>
+    <tr><th>Init</th><td><strong>systemd</strong> 261, with journald, udevd and logind; the base services are plain units in <code>/etc/systemd/system/</code></td></tr>
+    <tr><th>Services</th><td>systemd and NetworkManager only. No bundled desktop or extra daemons</td></tr>
+    <tr><th>Userland</th><td>GNU bash 5.3 as <code>/bin/sh</code>, GNU coreutils, tar, sed and gawk on glibc</td></tr>
+    <tr><th>Software</th><td><code>get</code>: build a source tarball and install it</td></tr>
+    <tr><th>Installer</th><td>No GUI. The handbook has every command, and <code>systemlinux-install</code> is a terminal script that runs the same steps: whole disk or an existing partition, with optional LUKS encryption</td></tr>
+    <tr><th>Boot</th><td>GRUB 2.12, UEFI x86_64 only. Live entries: normal, copy to RAM, debug shell</td></tr>
+    <tr><th>Memory</th><td>About 3&nbsp;GB; the &ldquo;copy to RAM&rdquo; entry needs the whole 1.9&nbsp;GB image in memory on top</td></tr>
+  </table></div>
+<hr>
+<p>systemLinux 2.0. Owned by everyone who uses it. <a href="https://github.com/tortr-rs/systemLinux">Source on GitHub</a></p>
+</body>
+</html>
