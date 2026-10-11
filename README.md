@@ -31,7 +31,7 @@ get -d /tmp/stage -c "--disable-nls" https://example.org/bar-2.0.tgz # staged un
 
 The live ISO deliberately has no compiler or build tools. They are **profiles** you add after installing.
 
-Website: `website/` (plain HTML; the Handbook is `website/handbook.html`) · Download: [GitHub release `v2.0`](https://github.com/tortr-rs/systemLinux/releases/tag/v2.0)
+Website: `website/` (plain HTML; the Handbook is `website/handbook.html`) · Download: [GitHub release `v2.0.0`](https://github.com/tortr-rs/systemLinux/releases/tag/v2.0.0)
 
 | File | Size | RAM needed |
 |---|---|---|
@@ -157,11 +157,11 @@ as artifacts.
 ### Cutting a release
 
 1. Make sure `VERSION` and `CHANGELOG.md` are right on `main`.
-2. Tag and push: `git tag v2.0 && git push origin v2.0` (`v2.0.0` also triggers it, but `get --profile` downloads
-   from the release named `v` + `VERSION`, so prefer `v2.0`).
+2. Tag and push: `git tag v2.0.0 && git push origin v2.0.0` (`v2.0` also triggers it; `get --profile` maps
+   `VERSION` 2.0 to the `v2.0.0` release, so prefer `v2.0.0`).
 3. `.github/workflows/release.yml` builds the ISO and creates the GitHub Release with the ISO, profiles,
    `SHA256SUMS` and the changelog entry as notes (it verifies the checksums first). The website links point at
-   `releases/download/v2.0/`.
+   `releases/download/v2.0.0/`.
 
 The full ISO build needs a real Linux host with sudo, ~30 GB of disk and the tools listed above
 (xorriso, mtools, pahole, ...); it is not verified in the restricted agent sandbox, so run `./build_iso.sh`
