@@ -19,3 +19,6 @@ old-ramdisk/
 update.key
 systemlinux-distro/*.tar.xz
 profiles-out/
+*.iso.sha256
+SHA256SUMS
+dist/
