@@ -5,7 +5,7 @@
 # daemons, docs, locales, compilers or language runtimes. After installing, `get --profile build-toolchain`
 # (and common-build-deps, lang-runtimes, ...) adds the build stack; `get URL` builds source tarballs.
 #
-#   ./build_iso.sh    -> systemlinux-v1.2.iso  (root shell, console only, installable with the handbook)
+#   ./build_iso.sh    -> systemLinux-2.0-x86_64.iso + .sha256  (root shell, console only, installable with the handbook)
 #
 # Run from a normal terminal (sudo needs a password prompt). Works from any Linux host with
 # grub2, xorriso, mtools, squashfs-tools and cpio on PATH (install them with your host's own
@@ -22,7 +22,7 @@ WORKSPACE=$BUILD_DIR/iso_workspace
 KERNEL=${KERNEL:-$BUILD_DIR/tools/kernel-full/vmlinuz-7.2.6-full}
 IMAGE_VERSION=$(cat "$BUILD_DIR/VERSION")
 PROFILES_OUT=${PROFILES_OUT:-$BUILD_DIR/profiles-out}
-ISO=${ISO:-$BUILD_DIR/systemlinux-v$IMAGE_VERSION.iso}
+ISO=${ISO:-$BUILD_DIR/systemLinux-$IMAGE_VERSION-x86_64.iso}
 cd "$BUILD_DIR"
 # fail early, with the fix, instead of halfway through the kernel build
 missing=
@@ -154,5 +154,5 @@ echo "=== [7/7] MASTERING ISO AND PACKING PROFILES ==="
 ROOTFS=$ROOTFS "$BUILD_DIR/tools/profiles/profiles.sh" build "$PROFILES_OUT"
 "$GRUB_MKRESCUE" -o "$ISO" "$WORKSPACE"
 sudo rm -rf "$WORKSPACE"
-sha256sum "$ISO"
+(cd "$(dirname "$ISO")" && sha256sum "$(basename "$ISO")" | tee "$(basename "$ISO").sha256")
 echo "SUCCESS: $ISO"
