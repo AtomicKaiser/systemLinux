@@ -1,0 +1,61 @@
+name: Build ISO
+
+# Builds the minimal installer ISO with build_iso.sh, writes SHA256SUMS and uploads everything as artifacts.
+# Also called by release.yml.
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "build_iso.sh"
+      - "VERSION"
+      - "tools/**"
+      - "rootfs/**"
+      - "profiles/**"
+      - "get"
+      - ".github/workflows/build-iso.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  iso:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools mtools cpio busybox-static cryptsetup efibootmgr \
+            dosfstools grub-efi-amd64-bin grub2-common grub-common flex bison bc dwarves libelf-dev libssl-dev \
+            libncurses-dev build-essential perl curl
+
+      - name: Fetch kernel source
+        run: |
+          mkdir -p systemlinux-distro
+          curl -fsSL -o systemlinux-distro/linux-7.2.6.tar.xz https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.2.6.tar.xz
+
+      - name: Build ISO
+        run: ./build_iso.sh
+
+      - name: Generate checksums
+        run: |
+          VERSION=$(cat VERSION)
+          mkdir -p dist
+          mv "systemLinux-$VERSION-x86_64.iso" "systemLinux-$VERSION-x86_64.iso.sha256" dist/
+          if [ -d profiles-out ]; then cp profiles-out/* dist/; fi
+          cd dist
+          sha256sum -- * | grep -v '\.sha256$' > ../SHA256SUMS
+          mv ../SHA256SUMS .
+          cat SHA256SUMS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: systemLinux-iso
+          path: dist/*
+          if-no-files-found: error

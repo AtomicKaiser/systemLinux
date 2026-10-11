@@ -6,7 +6,7 @@
   <img src="assets/logo.png" alt="systemLinux logo: a golden wheat ear on a dark green circle" width="160">
 </p>
 
-# systemLinux 1.2
+# systemLinux 2.0
 
 A minimal x86_64 GNU/Linux distribution built on a custom monolithic kernel, systemd, and a
 GNU userland (GNU bash 5.3 is `/bin/bash` and `/bin/sh`, GNU coreutils, tar, sed, gawk, findutils; the `bbash` fork stays
@@ -31,14 +31,14 @@ get -d /tmp/stage -c "--disable-nls" https://example.org/bar-2.0.tgz # staged un
 
 The live ISO deliberately has no compiler or build tools. They are **profiles** you add after installing.
 
-Website: `website/index.html` (also the Handbook) · Download: [GitHub release `v1.2`](https://github.com/tortr-rs/systemLinux/releases/tag/v1.2)
+Website: `website/index.html` (also the Handbook) · Download: [GitHub release `v2.0`](https://github.com/tortr-rs/systemLinux/releases/tag/v2.0)
 
 | File | Size | RAM needed |
 |---|---|---|
-| `systemlinux-v1.2.iso` | about 1.9 GB | about 3 GB (4 GB+ to use *copy to RAM*) |
+| `systemLinux-2.0-x86_64.iso` | about 1.9 GB | about 3 GB (4 GB+ to use *copy to RAM*) |
 
 ```sh
-sha256sum -c systemlinux-v1.2.iso.sha256   # the .sha256 file is on the release page
+sha256sum -c systemLinux-2.0-x86_64.iso.sha256   # the .sha256 file is on the release page
 ```
 
 See `ROADMAP.md` for what's still deliberately not done (NVIDIA proprietary, Secure Boot, etc.).
@@ -141,7 +141,7 @@ see the message `build_iso.sh` prints if something is missing). The installer's 
 copied from the host into the image.
 
 ```sh
-./build_iso.sh    # systemlinux-v1.2.iso
+./build_iso.sh    # systemLinux-2.0-x86_64.iso and systemLinux-2.0-x86_64.iso.sha256   (or: make iso)
 ```
 
 It also writes `profiles-out/profile-*.tar.xz` for the release (upload them next to the ISO; `get --profile`
@@ -151,9 +151,20 @@ installer and its boot tools into the squashfs stage, strips the stage with
 `tools/live-image/strip-live.sh`, compresses everything into `rootfs.squashfs` (zstd), builds the small
 initramfs (busybox + `cryptsetup`) and masters the ISO with `grub-mkrescue`.
 
+CI (`.github/workflows/build-iso.yml`) runs the same script and uploads the ISO, profiles and `SHA256SUMS`
+as artifacts.
+
+### Cutting a release
+
+1. Make sure `VERSION` and `CHANGELOG.md` are right on `main`.
+2. Tag and push: `git tag v2.0 && git push origin v2.0` (`v2.0.0` also triggers it, but `get --profile` downloads
+   from the release named `v` + `VERSION`, so prefer `v2.0`).
+3. `.github/workflows/release.yml` builds the ISO and creates the GitHub Release with the ISO, profiles,
+   `SHA256SUMS` and the changelog entry as notes. The website links point at `releases/download/v2.0/`.
+
 ## Installing to disk
 
-1. Write the ISO to a USB stick (`dd if=systemlinux-v1.2.iso of=/dev/sdX bs=4M status=progress conv=fsync`,
+1. Write the ISO to a USB stick (`dd if=systemLinux-2.0-x86_64.iso of=/dev/sdX bs=4M status=progress conv=fsync`,
    or copy it onto a Ventoy stick) and boot it in **UEFI mode**.
 2. At the live console, run `sudo systemlinux-install` and answer its prompts (disk or
    existing partition, computer name, your account, timezone, keymap, optional LUKS

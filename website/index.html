@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>systemLinux 1.2: an operating system with no owners</title>
+<title>systemLinux 2.0: an operating system with no owners</title>
 <meta name="description" content="systemLinux is a communist GNU/Linux distribution. Nobody owns it and nobody profits from it. A small console system you can install, read, change and give away.">
 <link rel="icon" type="image/svg+xml" href="logo.svg">
 <style>
@@ -117,7 +117,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 
 <div class="hero"><div class="wrap grid">
   <div>
-    <span class="eyebrow">Release 1.2</span>
+    <span class="eyebrow">Release 2.0</span>
     <h1>The computer belongs to <span>the people who use it.</span></h1>
     <p class="lead">Your computer is a means of production, and tech companies rent it back to you. They decide what runs on it, they watch what you do, and they sell what they learn. systemLinux is a small GNU/Linux system that nobody owns and nobody profits from. Install it, read it, change it, give it away.</p>
     <a class="btn primary" href="#download">Download</a><a class="btn" href="#handbook">Read the handbook</a>
@@ -185,6 +185,16 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
   </table></div>
 </div></section>
 
+<section id="whatsnew" class="alt"><div class="wrap">
+  <h2>What's new in 2.0</h2>
+  <ul class="tight">
+    <li><strong><code>goget</code> is now <code>get</code>.</strong> A small POSIX <code>sh</code> script: <code>get URL</code> downloads a source tarball, builds it and installs it. <code>goget</code> and its image updater are gone.</li>
+    <li><strong>Minimal installer-only ISO.</strong> The live image is the kernel plus the bare minimum to run <code>systemlinux-install</code>. No desktop, no extra daemons, no compilers.</li>
+    <li><strong>Build stack on demand.</strong> After installing, <code>get --profile build-toolchain</code> (and <code>common-build-deps</code>, <code>lang-runtimes</code>) adds what you need; <code>validate-build-ready</code> checks it.</li>
+  </ul>
+  <p>Breaking changes and the full list are in the <a href="https://github.com/tortr-rs/systemLinux/blob/main/CHANGELOG.md">changelog</a>.</p>
+</div></section>
+
 <section id="download"><div class="wrap">
   <h2>Download</h2>
   <p class="sub">One live ISO you can write to a USB stick or drop onto a Ventoy drive. Boot in <strong>UEFI mode</strong>.</p>
@@ -192,11 +202,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
     <div class="panel">
       <h3>systemLinux</h3>
       <p>Boots to a root shell on the console. Install it by hand with the handbook, or run <code>systemlinux-install</code>. The ISO is about 1.9&nbsp;GB and needs 3&nbsp;GB of RAM (4&nbsp;GB or more for <em>copy to RAM</em>).</p>
-      <p><a class="btn primary" href="https://github.com/tortr-rs/systemLinux/releases/download/v1.2/systemlinux-v1.2.iso">systemlinux-v1.2.iso</a></p>
-      <p><strong>SHA-256</strong><br>Every release on the <a href="https://github.com/tortr-rs/systemLinux/releases">releases page</a> has its checksum. Check it before you trust a copy from anywhere else.</p>
+      <p><a class="btn primary" href="https://github.com/tortr-rs/systemLinux/releases/download/v2.0/systemLinux-2.0-x86_64.iso">systemLinux-2.0-x86_64.iso</a></p>
+      <p><strong>SHA-256</strong><br><a href="https://github.com/tortr-rs/systemLinux/releases/download/v2.0/systemLinux-2.0-x86_64.iso.sha256">systemLinux-2.0-x86_64.iso.sha256</a> (all checksums: <a href="https://github.com/tortr-rs/systemLinux/releases/download/v2.0/SHA256SUMS">SHA256SUMS</a>). Check it before you trust a copy from anywhere else.</p>
     </div>
   </div>
-  <p style="margin-top:1.2rem">Check your download with <code>sha256sum systemlinux-v1.2.iso</code> against the checksum on the releases page. Older versions are on the <a href="https://github.com/tortr-rs/systemLinux/releases">releases page</a>; the source is on <a href="https://github.com/tortr-rs/systemLinux">GitHub</a>.</p>
+  <p style="margin-top:1.2rem">Check your download with <code>sha256sum systemLinux-2.0-x86_64.iso</code> against the checksum on the releases page. Older versions are on the <a href="https://github.com/tortr-rs/systemLinux/releases">releases page</a>; the source is on <a href="https://github.com/tortr-rs/systemLinux">GitHub</a>.</p>
   <p><strong>Ventoy:</strong> copy the ISO onto the stick. Older systemLinux ISOs on the same stick are fine: each ISO only boots its own system. If it reports an error at boot, write the ISO straight to a stick instead.</p>
 </div></section>
 
@@ -220,8 +230,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
     </ol></aside>
     <article>
       <div class="chapter" id="hb-1"><h3>1. Make a bootable USB stick</h3>
-        <p>Download the ISO and check it against the SHA-256 on the <a href="https://github.com/tortr-rs/systemLinux/releases/tag/v1.2">release page</a>. Then copy it onto a <strong>Ventoy</strong> stick, or write it straight to a stick (this erases the stick):</p>
-        <pre class="term">sudo dd if=systemlinux-v1.2.iso of=/dev/sdX bs=4M status=progress conv=fsync</pre>
+        <p>Download the ISO and check it against the SHA-256 on the <a href="https://github.com/tortr-rs/systemLinux/releases/tag/v2.0">release page</a>. Then copy it onto a <strong>Ventoy</strong> stick, or write it straight to a stick (this erases the stick):</p>
+        <pre class="term">sudo dd if=systemLinux-2.0-x86_64.iso of=/dev/sdX bs=4M status=progress conv=fsync</pre>
         <p>Replace <code>/dev/sdX</code> with the stick (check with <code>lsblk</code>). On Windows use Rufus in <em>DD image</em> mode or balenaEtcher.</p></div>
 
       <div class="chapter" id="hb-2"><h3>2. Boot the live system</h3>
@@ -374,7 +384,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 </main>
 
 <footer><div class="wrap">
-  <span>systemLinux 1.2 &middot; owned by everyone who uses it &middot; <a href="https://github.com/tortr-rs/systemLinux">source on GitHub</a></span>
+  <span>systemLinux 2.0 &middot; owned by everyone who uses it &middot; <a href="https://github.com/tortr-rs/systemLinux">source on GitHub</a></span>
   <span>Workers of the world, unite.</span>
 </div></footer>
 

@@ -1,0 +1,48 @@
+name: Release
+
+# Cut a release by pushing a tag:  git tag v2.0 && git push origin v2.0
+on:
+  push:
+    tags:
+      - "v2.0"
+      - "v2.0.0"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches VERSION
+        run: |
+          V=$(cat VERSION)
+          case "$GITHUB_REF_NAME" in
+              "v$V"|"v$V.0") ;;
+              *) echo "tag $GITHUB_REF_NAME does not match VERSION $V"; exit 1 ;;
+          esac
+
+  build:
+    needs: check
+    uses: ./.github/workflows/build-iso.yml
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: systemLinux-iso
+          path: dist
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk '/^## 2\.0/{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          [ -s notes.md ] || { echo "no 2.0 entry in CHANGELOG.md"; exit 1; }
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "systemLinux $(cat VERSION)" --notes-file notes.md --verify-tag
