@@ -1,0 +1,7 @@
+@keep
+usr/bin/sudo
+usr/bin/less
+usr/bin/nano
+usr/bin/vim
+usr/share/zoneinfo
+usr/share/terminfo

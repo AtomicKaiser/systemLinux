@@ -105,7 +105,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
     <nav aria-label="Main"><ul>
       <li><a href="#principles">Why communist</a></li>
       <li><a href="#features">Features</a></li>
-      <li><a href="#goget">goget</a></li>
+      <li><a href="#get">get</a></li>
       <li><a href="#handbook">Handbook</a></li>
       <li><a href="#services">Services</a></li>
       <li><a href="#download">Download</a></li>
@@ -121,7 +121,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
     <h1>The computer belongs to <span>the people who use it.</span></h1>
     <p class="lead">Your computer is a means of production, and tech companies rent it back to you. They decide what runs on it, they watch what you do, and they sell what they learn. systemLinux is a small GNU/Linux system that nobody owns and nobody profits from. Install it, read it, change it, give it away.</p>
     <a class="btn primary" href="#download">Download</a><a class="btn" href="#handbook">Read the handbook</a>
-    <div class="facts"><span><b>No</b> telemetry, accounts or ads</span><span><b>Atomic</b> updates that roll back</span><span><b>Linux 7.2.6</b>, most drivers built in</span><span><b>100,000+</b> packages from nixpkgs</span></div>
+    <div class="facts"><span><b>No</b> telemetry, accounts or ads</span><span><b>Minimal</b> installer-only live ISO</span><span><b>Linux 7.2.6</b>, most drivers built in</span><span><b>get</b> builds from source tarballs</span></div>
   </div>
 </div></div>
 
@@ -140,41 +140,32 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 
 <section id="features" class="alt"><div class="wrap">
   <h2>What you get</h2>
-  <p class="sub">A console system where the everyday things work. Try it live, install it, keep it updated.</p>
+  <p class="sub">A minimal console system. The live ISO is installer media only: kernel plus the bare minimum to install.</p>
   <div class="cards">
-    <div class="card"><h3>Console first</h3><p>No desktop comes bundled. You do get Bluetooth, PipeWire audio, chrony for the clock, power profiles, CUPS printing, fwupd firmware updates, Flatpak, and a firewall that blocks incoming connections by default.</p></div>
+    <div class="card"><h3>Minimal live ISO</h3><p>The live image is only the kernel and what the installer needs: systemd, NetworkManager, disk and boot tools. No desktop, daemons, firmware bundles, docs or locale packs.</p></div>
     <div class="card"><h3>Install it yourself</h3><p>The handbook lists every command. If you'd rather not type them, <code>systemlinux-install</code> runs the same steps. Use a whole disk, or a partition you've already freed up. It boots from a USB stick or Ventoy, in UEFI mode.</p></div>
-    <div class="card"><h3>Atomic updates</h3><p>The system is a read-only image that gets replaced whole, like Fedora Silverblue. <code>goget upgrade</code> downloads a signed image and boots it once as a trial. If it doesn't come up, you're back on the old one. Your files and programs aren't touched.</p></div>
-    <div class="card"><h3>Packages you can undo</h3><p><code>goget install</code> pulls signed, prebuilt software from nixpkgs into your own profile. Any change can be rolled back. You can run a program without installing it, or keep your whole setup in one text file.</p></div>
+    <div class="card"><h3>Build what you need</h3><p><code>get URL</code> downloads a source tarball, builds it and installs it where you say. It is a short POSIX shell script you can read in a minute.</p></div>
     <div class="card"><h3>Plain systemd</h3><p>Services are ordinary systemd units. <code>systemctl</code>, <code>journalctl</code> and <code>loginctl</code> do what you already know they do.</p></div>
-    <div class="card"><h3>Drivers built in</h3><p>One kernel with Intel, AMD and open-source NVIDIA graphics, Wi-Fi, Bluetooth, storage and laptop drivers compiled in, plus the firmware they need.</p></div>
+    <div class="card"><h3>Drivers built in</h3><p>One kernel with Intel, AMD and open-source NVIDIA graphics, Wi-Fi, Bluetooth, storage and laptop drivers compiled in, and nothing else.</p></div>
   </div>
 </div></section>
 
-<section id="goget"><div class="wrap">
-  <h2>goget</h2>
-  <p class="sub">goget installs prebuilt, signed packages from the NixOS binary cache into <code>/nix/store</code> and gives each user a profile. You don't have to learn the Nix language or compile anything.</p>
+<section id="get"><div class="wrap">
+  <h2>get</h2>
+  <p class="sub"><code>get</code> is a small POSIX <code>sh</code> script: it downloads a source tarball, extracts it, runs <code>./configure --prefix=&hellip;</code> (if there is one), <code>make</code> and <code>make install</code>.</p>
   <div class="two">
     <div>
-<pre class="term"><span class="p">$</span> goget find editor
-<span class="p">$</span> goget install htop git firefox
-<span class="c"># downloaded, verified against the cache's signature, linked</span>
-<span class="p">$</span> goget run cowsay hello        <span class="c"># try it, install nothing</span>
-<span class="p">$</span> goget shell python3 nodejs     <span class="c"># a shell with those tools</span>
-<span class="p">$</span> goget generations
-   1  htop
- * 2  htop git firefox
-<span class="p">$</span> goget rollback                <span class="c"># undo the last change</span>
-<span class="p">$</span> goget gc                      <span class="c"># free what nothing uses</span></pre>
+<pre class="term"><span class="p">$</span> get https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz
+<span class="p">$</span> get -p "$HOME/.local" https://example.org/foo-1.0.tar.xz
+<span class="p">$</span> get -d /tmp/stage -c "--disable-nls" https://example.org/bar-2.0.tgz
+<span class="p">$</span> get --help</pre>
     </div>
     <div>
       <ul class="tight">
-        <li><strong>Every change can be undone.</strong> Each install, removal or update makes a new generation, and <code>goget rollback</code> switches back to the last one.</li>
-        <li><strong>Your setup in a text file.</strong> Put package names in <code>~/.config/goget/packages</code>, one per line, and run <code>goget apply</code>.</li>
-        <li><strong>Checked before use.</strong> Every store path is verified against the cache&rsquo;s ed25519 signature and its SHA-256. Packages never overwrite each other.</li>
-        <li><strong>A profile for each user.</strong> Install without <code>sudo</code>. <code>sudo goget install</code> installs for the whole system.</li>
-        <li><strong>Pick a channel.</strong> <code>goget channel stable</code> or <code>unstable</code>.</li>
-        <li><strong>Also from source.</strong> <code>goget install owner/repo</code> builds from GitHub, GitLab or Codeberg.</li>
+        <li><strong>Formats.</strong> <code>.tar.gz</code>, <code>.tgz</code>, <code>.tar.bz2</code>, <code>.tar.xz</code> and <code>.tar</code>. Anything else fails with a clear message.</li>
+        <li><strong>Where it goes.</strong> <code>-p DIR</code> sets the prefix (default <code>/usr/local</code>); <code>-d DIR</code> stages the install under <code>DESTDIR</code>.</li>
+        <li><strong>Clean.</strong> It builds in a temporary directory and removes it afterwards (<code>-k</code> keeps it).</li>
+        <li><strong>Tools.</strong> Uses <code>curl</code> or <code>wget</code>, <code>tar</code> and <code>make</code>.</li>
       </ul>
     </div>
   </div>
@@ -183,12 +174,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 <section id="specs" class="alt"><div class="wrap">
   <h2>What's in the image</h2>
   <div class="table-scroll"><table>
-    <tr><th>Kernel</th><td>Linux 7.2.6, monolithic, with drivers for almost everything built in (Wi-Fi, Bluetooth, Intel/AMD/open NVIDIA graphics, storage, sound, laptop hardware, exFAT/NTFS/btrfs/XFS) and bundled firmware</td></tr>
+    <tr><th>Kernel</th><td>Linux 7.2.6, monolithic, with drivers for almost everything built in (Wi-Fi, Bluetooth, Intel/AMD/open NVIDIA graphics, storage, sound, laptop hardware, exFAT/NTFS/btrfs/XFS); no firmware bundled</td></tr>
     <tr><th>Init</th><td><strong>systemd</strong> 261, with journald, udevd and logind; the base services are plain units in <code>/etc/systemd/system/</code></td></tr>
-    <tr><th>Services</th><td>Bluetooth (bluez), audio (PipeWire), time sync (chrony), power profiles, CUPS printing, fwupd, Flatpak, a default firewall (nftables). No bundled desktop</td></tr>
+    <tr><th>Services</th><td>systemd and NetworkManager only. No bundled desktop or extra daemons</td></tr>
     <tr><th>Userland</th><td>GNU bash 5.3 as <code>/bin/sh</code>, GNU coreutils, tar, sed and gawk on glibc</td></tr>
-    <tr><th>Packages</th><td><code>goget</code> with nixpkgs (25.05 stable or unstable): store paths, profiles, generations, rollback</td></tr>
-    <tr><th>Updates</th><td>Atomic, image-based, like Fedora Silverblue: signed system images (<code>goget upgrade</code>), trial boot and automatic rollback</td></tr>
+    <tr><th>Software</th><td><code>get</code>: build a source tarball and install it</td></tr>
     <tr><th>Installer</th><td>No GUI. The handbook has every command, and <code>systemlinux-install</code> is a terminal script that runs the same steps: whole disk or an existing partition, with optional LUKS encryption</td></tr>
     <tr><th>Boot</th><td>GRUB 2.12, UEFI x86_64 only. Live entries: normal, copy to RAM, debug shell</td></tr>
     <tr><th>Memory</th><td>About 3&nbsp;GB; the &ldquo;copy to RAM&rdquo; entry needs the whole 1.9&nbsp;GB image in memory on top</td></tr>
@@ -224,7 +214,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
       <li><a href="#hb-6">First boot</a></li>
       <li><a href="#hb-7">Installing software</a></li>
       <li><a href="#hb-8">Updating the system</a></li>
-      <li><a href="#hb-9">Rolling back</a></li>
+      <li><a href="#hb-9">Programs you built</a></li>
       <li><a href="#hb-10">Recovery</a></li>
       <li><a href="#hb-11">If something goes wrong</a></li>
     </ol></aside>
@@ -275,7 +265,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 <span class="p">$</span> echo myhostname > "$ROOT/etc/hostname"
 <span class="p">$</span> ln -sf ../usr/share/zoneinfo/Region/City "$ROOT/etc/localtime"   <span class="c"># e.g. Europe/Lisbon</span>
 <span class="p">$</span> echo LANG=C.UTF-8 > "$ROOT/etc/locale.conf"
-<span class="p">$</span> goget provision --user yourname "$ROOT"    <span class="c"># prompts for your password, creates the account, sudoers, branding</span>
+<span class="p">$</span> systemlinux-provision --user yourname "$ROOT"    <span class="c"># reads your password from stdin (twice), creates the account, sudoers, branding</span>
 <span class="p">$</span> rm -rf "$ROOT/etc/systemd/system/getty@tty1.service.d"   <span class="c"># ask for a login on tty1 (the live image logs root in)</span>
 <span class="p">$</span> chpasswd -R "$ROOT"                         <span class="c"># set the root password, "root:yourpassword"</span></pre>
 
@@ -306,26 +296,24 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
         <p>GRUB shows for three seconds, then systemLinux starts to a console login. Your user can use <code>sudo</code>.</p></div>
 
       <div class="chapter" id="hb-7"><h3>7. Installing software</h3>
-        <p>Use <code>goget</code>. Programs go into your own profile, so no <code>sudo</code> is needed:</p>
-<pre class="term"><span class="p">$</span> goget find video
-<span class="p">$</span> goget install vlc gimp
-<span class="p">$</span> goget list
-<span class="p">$</span> goget remove gimp
-<span class="p">$</span> goget update                   <span class="c"># newer versions of what you installed</span>
-<span class="p">$</span> goget run neofetch            <span class="c"># run without installing</span></pre>
-        <p>Prefer a list? Write package names, one per line, to <code>~/.config/goget/packages</code> and run <code>goget apply</code>: the profile then matches the file exactly. Every change is a generation, so <code>goget rollback</code> undoes it, and <code>goget gc</code> deletes what nothing uses.</p></div>
+        <p>Use <code>get</code> to build software from a source tarball:</p>
+<pre class="term"><span class="p">$</span> sudo get https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz         <span class="c"># into /usr/local</span>
+<span class="p">$</span> get -p "$HOME/.local" https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz   <span class="c"># into your home, no sudo</span></pre>
+        <p>The live ISO has no compiler. Add the build stack from profiles first (downloaded from this image&rsquo;s release):</p>
+<pre class="term"><span class="p">$</span> sudo get --profile build-toolchain
+<span class="p">$</span> sudo get --profile common-build-deps     <span class="c"># cmake, ninja, meson, autotools, pkgconf</span>
+<span class="p">$</span> sudo get --profile lang-runtimes         <span class="c"># Perl, Python, Go</span>
+<span class="p">$</span> validate-build-ready                 <span class="c"># compiles autotools, CMake and Meson test projects</span></pre>
+        <p>Then build anything from a source tarball, for example <code>get https://ftp.gnu.org/gnu/coreutils/coreutils-9.5.tar.xz</code> or <code>get -p "$HOME/.local" https://sqlite.org/2024/sqlite-autoconf-3460000.tar.gz</code>. CMake and Meson projects use the installed <code>cmake</code> and <code>meson</code> directly. See <code>get --help</code> for the prefix, staging and configure options.</p></div>
 
       <div class="chapter" id="hb-8"><h3>8. Updating the system</h3>
-        <p>The system itself updates as a whole image, so an update cannot leave it half-upgraded:</p>
-<pre class="term"><span class="p">$</span> goget upgrade --check    <span class="c"># is a newer image available?</span>
-<span class="p">$</span> sudo goget upgrade       <span class="c"># download, verify and install it</span></pre>
-        <p>The image is downloaded (a broken download resumes), verified against a signed release index and its SHA-256 hashes, and added to the boot menu as a one-time trial. Restart to use it. Your files, accounts, settings and installed programs are not touched.</p></div>
+        <p>There is no in-place updater: to move to a newer systemLinux, write the new ISO to a stick and run <code>systemlinux-install</code> again (onto a new partition, or the same one).</p></div>
 
-      <div class="chapter" id="hb-9"><h3>9. Rolling back</h3>
-        <p>The first boot into a new system image is a trial. If it does not come up, the next boot returns to the previous image automatically. Once the new system has run for a minute, <code>systemlinux-boot-good.timer</code> makes it the default. The previous image stays installed and you can pick it by hand in the GRUB menu at startup. Programs installed with goget roll back separately with <code>goget rollback</code>.</p></div>
+      <div class="chapter" id="hb-9"><h3>9. Programs you built</h3>
+        <p>Software installed with <code>get</code> goes under <code>/usr/local</code> (or the prefix you chose). Remove it with that project&rsquo;s own <code>make uninstall</code>, or build it with <code>get -d</code> into a staging directory first to see what it installs.</p></div>
 
       <div class="chapter" id="hb-10"><h3>10. Recovery</h3>
-        <p><strong>Boot an older image:</strong> at the GRUB menu, pick a previous version. Every image <code>goget upgrade</code> hasn&rsquo;t cleaned up yet stays listed and bootable.</p>
+        <p><strong>Boot an older image:</strong> at the GRUB menu, pick a previous version. Every image installed on the disk stays listed and bootable.</p>
         <p><strong>Repair a broken install from the live ISO:</strong> boot the live medium, then mount and chroot into the installed system the same way the installer assembles it:</p>
         <pre class="term"><span class="p">$</span> mkdir -p /mnt/data /mnt/sq /mnt/root
 <span class="p">$</span> mount /dev/sdXN /mnt/data                          <span class="c"># the data partition</span>
@@ -336,7 +324,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 <span class="p">$</span> mount --bind /proc /mnt/root/proc && mount --bind /sys /mnt/root/sys && mount --bind /dev /mnt/root/dev
 <span class="p">$</span> chroot /mnt/root /bin/bash</pre>
         <p>Fix what needs fixing (reset a password with <code>passwd</code>, edit <code>/etc/fstab</code>, reinstall GRUB with the same command as chapter 3 step 5), then <code>exit</code> and unmount in reverse order before rebooting.</p>
-        <p><strong>Back up:</strong> everything you can lose lives under <code>/persist/upper</code> on the data partition. That&rsquo;s the entire writable layer (your files, accounts, and any changes made outside of goget profiles). Copy it (or just <code>/home</code> and <code>/etc</code> within it) to external storage regularly; system images themselves are always re-downloadable and never need backing up.</p></div>
+        <p><strong>Back up:</strong> everything you can lose lives under <code>/persist/upper</code> on the data partition. That&rsquo;s the entire writable layer (your files, accounts, and any software you built with get). Copy it (or just <code>/home</code> and <code>/etc</code> within it) to external storage regularly; system images themselves are always re-downloadable and never need backing up.</p></div>
 
       <div class="chapter" id="hb-11"><h3>11. If something goes wrong</h3>
         <ul>
@@ -359,8 +347,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
       <table>
         <tr><th><code>systemctl status [unit]</code></th><td>What is running, and what failed (<code>systemctl --failed</code>)</td></tr>
         <tr><th><code>journalctl -b [-u unit]</code></th><td>This boot&rsquo;s log, or one service&rsquo;s</td></tr>
-        <tr><th><code>systemctl start|stop|restart &lt;unit&gt;</code></th><td>Control a service: <code>NetworkManager</code>, <code>bluetooth</code>, <code>audio</code>, <code>cups</code>, <code>chronyd</code>, <code>nftables</code>, &hellip;</td></tr>
-        <tr><th><code>systemctl list-timers</code></th><td><code>goget-check</code> (looks for a new image every 12h, never installs by itself) and <code>systemlinux-boot-good</code> (makes a trial image the default)</td></tr>
+        <tr><th><code>systemctl start|stop|restart &lt;unit&gt;</code></th><td>Control a service: <code>NetworkManager</code>, &hellip;</td></tr>
         <tr><th><code>reboot</code> / <code>poweroff</code> / <code>halt</code></th><td>Power commands</td></tr>
         <tr><th><code>/etc/systemd/system/</code></th><td>The base image&rsquo;s own units; add yours here and <code>systemctl enable</code> them</td></tr>
         <tr><th>Console</th><td>The live ISO logs root in on tty1; an installed system asks for a login. Add <code>console=ttyS0</code> to the kernel command line for a serial login</td></tr>
@@ -379,9 +366,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
     <li>No Secure Boot yet. LUKS full-disk encryption is available (chapter 4 of the handbook).</li>
     <li>There&rsquo;s no graphical login or lock screen. It&rsquo;s a console system: you log in on tty1.</li>
     <li>Only English is included. Suspend and lid handling depend on your hardware.</li>
-    <li>Programs from nixpkgs that need hardware-accelerated OpenGL or Vulkan can fall back to software rendering, because they carry their own graphics libraries.</li>
     <li>The kernel has Intel, AMD and the open NVIDIA (nouveau) graphics drivers, not NVIDIA&rsquo;s proprietary driver.</li>
-    <li>Atomic, but not sealed: the system image is read-only and swapped as a whole, but changes you make to <code>/etc</code> or <code>/usr</code> yourself are kept in a separate writable layer on top of it (unlike Silverblue&rsquo;s strictly immutable root).</li>
+    <li>The system image is read-only; changes you make to <code>/etc</code> or <code>/usr</code> yourself are kept in a separate writable layer on top of it.</li>
       </ul>
 </div></section>
 

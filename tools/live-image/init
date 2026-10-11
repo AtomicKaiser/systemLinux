@@ -10,7 +10,7 @@
 #   systemlinux.debug=1    open a shell just before switching to the real root
 #   systemlinux.shell=1    open a shell before looking for the medium
 # The same options with a lenine. prefix are still accepted: installs from the lenine days keep them in
-# grub.cfg until their first `goget upgrade` rewrites it.
+# their grub.cfg, which is never rewritten.
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
 /bin/busybox mkdir -p /proc /sys /dev /mnt /newroot /overlay

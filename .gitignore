@@ -18,3 +18,4 @@ tools/kernel-full/vmlinuz-*
 old-ramdisk/
 update.key
 systemlinux-distro/*.tar.xz
+profiles-out/

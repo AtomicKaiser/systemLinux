@@ -1,0 +1,7 @@
+@requires network-runtime
+usr/share/fonts
+usr/share/icons
+usr/share/X11
+usr/share/themes
+usr/share/applications
+usr/share/mime
