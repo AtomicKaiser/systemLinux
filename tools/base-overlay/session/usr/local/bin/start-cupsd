@@ -1,4 +1,0 @@
-#!/bin/sh
-# systemLinux: CUPS printing (run by cups.service)
-mkdir -p /run/cups /var/log/cups /var/spool/cups /var/cache/cups
-exec /nix/var/goget/profiles/system/current/bin/cupsd -f

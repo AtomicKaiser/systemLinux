@@ -1,0 +1,126 @@
+#!/bin/sh
+# get: download a source tarball, extract it, build it and install it.
+#
+# usage: get [options] URL
+#   -p, --prefix DIR    install prefix (default: /usr/local)
+#   -d, --destdir DIR   stage the install under DIR (make install DESTDIR=DIR)
+#   -s, --srcdir NAME   directory inside the tarball to build (default: its only top-level directory)
+#   -j, --jobs N        parallel make jobs (default: number of CPUs)
+#   -c, --configure-args "ARGS"   extra arguments for ./configure
+#   -k, --keep          keep the temporary work directory (default: remove it)
+#   -h, --help          show this help
+#
+# Supported archives: .tar.gz .tgz .tar.bz2 .tbz2 .tar.xz .txz .tar
+# Build: ./configure --prefix=PREFIX (when present), make, make install.
+# Examples:
+#   get https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz
+#   get -p "$HOME/.local" https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz
+#   get -d /tmp/stage -c "--disable-nls" https://example.org/foo-1.0.tar.xz
+set -eu
+
+PREFIX=/usr/local DESTDIR_ARG='' SRCDIR='' JOBS='' CONFARGS='' KEEP=0 URL=''
+WORK=''
+
+die() { printf 'get: %s\n' "$*" >&2; exit 1; }
+usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; }
+cleanup() {
+    if [ -n "$WORK" ] && [ -d "$WORK" ]; then
+        if [ "$KEEP" = 1 ]; then printf 'get: work directory kept: %s\n' "$WORK" >&2; else rm -rf "$WORK"; fi
+    fi
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -p|--prefix) [ $# -ge 2 ] || die "$1 needs an argument"; PREFIX=$2; shift 2 ;;
+        -d|--destdir) [ $# -ge 2 ] || die "$1 needs an argument"; DESTDIR_ARG=$2; shift 2 ;;
+        -s|--srcdir) [ $# -ge 2 ] || die "$1 needs an argument"; SRCDIR=$2; shift 2 ;;
+        -j|--jobs) [ $# -ge 2 ] || die "$1 needs an argument"; JOBS=$2; shift 2 ;;
+        -c|--configure-args) [ $# -ge 2 ] || die "$1 needs an argument"; CONFARGS=$2; shift 2 ;;
+        -k|--keep) KEEP=1; shift ;;
+        -h|--help) usage; exit 0 ;;
+        --) shift; break ;;
+        -*) usage >&2; die "unknown option $1" ;;
+        *) break ;;
+    esac
+done
+[ $# -ge 1 ] || { usage >&2; exit 2; }
+URL=$1; shift
+[ $# -eq 0 ] || die "only one URL is accepted"
+
+case "$URL" in
+    https://*) ;;
+    http://*|ftp://*) printf 'get: warning: %s is not encrypted and the source is not verified\n' "$URL" >&2 ;;
+    *) die "not a URL: $URL" ;;
+esac
+case "$JOBS" in
+    ''|*[!0-9]*) [ -z "$JOBS" ] || die "--jobs needs a number" ;;
+esac
+[ -n "$JOBS" ] || JOBS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
+
+file=${URL%%[?#]*}
+file=${file##*/}
+case "$file" in
+    *.tar.gz|*.tgz) FLAG=z ;;
+    *.tar.bz2|*.tbz2) FLAG=j ;;
+    *.tar.xz|*.txz) FLAG=J ;;
+    *.tar) FLAG= ;;
+    *) die "unsupported archive format: ${file:-$URL} (supported: .tar.gz .tgz .tar.bz2 .tar.xz .tar)" ;;
+esac
+
+command -v make >/dev/null 2>&1 || die "make is required"
+command -v tar >/dev/null 2>&1 || die "tar is required"
+
+WORK=$(mktemp -d "${TMPDIR:-/tmp}/get.XXXXXX") || die "cannot create a work directory"
+trap cleanup EXIT
+trap 'exit 130' INT TERM HUP
+
+printf 'get: downloading %s\n' "$URL"
+if command -v curl >/dev/null 2>&1; then
+    curl -fsSL --retry 2 -o "$WORK/$file" "$URL" || die "download failed (curl)"
+elif command -v wget >/dev/null 2>&1; then
+    wget -q --tries=3 -O "$WORK/$file" "$URL" || die "download failed (wget)"
+else
+    die "need curl or wget to download"
+fi
+
+printf 'get: extracting %s\n' "$file"
+mkdir "$WORK/src"
+if [ -n "$FLAG" ]; then
+    tar -x"$FLAG"f "$WORK/$file" -C "$WORK/src" || die "extraction failed"
+else
+    tar -xf "$WORK/$file" -C "$WORK/src" || die "extraction failed"
+fi
+
+if [ -n "$SRCDIR" ]; then
+    case "$SRCDIR" in /*|..|../*|*/../*|*/..) die "--srcdir must be a relative path inside the archive" ;; esac
+    BUILD=$WORK/src/$SRCDIR
+else
+    BUILD=$WORK/src
+    set -- "$WORK"/src/*
+    if [ $# -eq 1 ] && [ -d "$1" ]; then BUILD=$1; fi
+fi
+[ -d "$BUILD" ] || die "source directory not found: ${SRCDIR:-$BUILD}"
+cd "$BUILD"
+
+MAKEVARS=''
+if [ -x ./configure ]; then
+    printf 'get: configure --prefix=%s\n' "$PREFIX"
+    # CONFARGS is deliberately word-split
+    # shellcheck disable=SC2086
+    ./configure --prefix="$PREFIX" $CONFARGS || die "configure failed"
+else
+    MAKEVARS="PREFIX=$PREFIX"
+fi
+
+[ -f Makefile ] || [ -f makefile ] || [ -f GNUmakefile ] || die "no Makefile found (and no configure script to create one)"
+printf 'get: make -j%s\n' "$JOBS"
+make -j"$JOBS" ${MAKEVARS:+"$MAKEVARS"} || die "make failed"
+
+printf 'get: make install (prefix %s%s)\n' "$PREFIX" "${DESTDIR_ARG:+, staged in $DESTDIR_ARG}"
+if [ -n "$DESTDIR_ARG" ]; then
+    mkdir -p "$DESTDIR_ARG"
+    make install DESTDIR="$DESTDIR_ARG" ${MAKEVARS:+"$MAKEVARS"} || die "make install failed"
+else
+    make install ${MAKEVARS:+"$MAKEVARS"} || die "make install failed (try again with sudo, or a --prefix you can write to)"
+fi
+printf 'get: done\n'

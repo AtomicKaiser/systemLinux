@@ -10,14 +10,24 @@
 
 A minimal x86_64 GNU/Linux distribution built on a custom monolithic kernel, systemd, and a
 GNU userland (GNU bash 5.3 is `/bin/bash` and `/bin/sh`, GNU coreutils, tar, sed, gawk, findutils; the `bbash` fork stays
-installed as its own command). One console-only live ISO; no desktop edition. It boots
-like any live ISO (a compressed `rootfs.squashfs` on the ISO with a RAM layer on top) and
+installed as its own command). The live ISO is **minimal installer media only**: the kernel plus the
+bare minimum needed to boot and run `systemlinux-install` (systemd, NetworkManager for a network
+install, disk/boot tools). No desktop, daemons, firmware bundles, docs, man pages or locale packs.
+It boots like any live ISO (a compressed `rootfs.squashfs` on the ISO with a RAM layer on top) and
 can be installed to disk with the `systemlinux-install` command-line tool or, step by step
-by hand, with the Handbook below. Installed systems update with `goget upgrade`: a signed
-system image is downloaded, swapped in at the next reboot with your files kept, and a
-failed trial boot rolls back on its own.
+by hand, with the Handbook below.
 
-systemLinux is **atomic**, like Fedora Silverblue: the system is a read-only image that `goget upgrade` replaces as a whole, with a trial boot and automatic rollback; programs live in separate, rollback-able goget profiles.
+Software is added with `get`, a small POSIX `sh` script that downloads a source tarball, builds it
+and installs it:
+
+```sh
+get https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz                 # into /usr/local
+get -p "$HOME/.local" https://example.org/foo-1.0.tar.xz            # into your home
+get -d /tmp/stage -c "--disable-nls" https://example.org/bar-2.0.tgz # staged under DESTDIR
+```
+
+`get` runs `./configure --prefix=PREFIX` (if present), `make` and `make install`; it handles
+`.tar.gz`, `.tgz`, `.tar.bz2`, `.tar.xz` and `.tar`. See `get --help`.
 
 Website: `website/index.html` (also the Handbook) · Download: [GitHub release `v1.2`](https://github.com/tortr-rs/systemLinux/releases/tag/v1.2)
 
@@ -29,11 +39,7 @@ Website: `website/index.html` (also the Handbook) · Download: [GitHub release `
 sha256sum -c systemlinux-v1.2.iso.sha256   # the .sha256 file is on the release page
 ```
 
-Bundled firmware excludes vendor categories that cannot run on x86_64 at all (Qualcomm
-Snapdragon/Adreno SoC firmware, other ARM/embedded-only vendors) and enterprise datacenter
-NICs outside this project's laptop/desktop target (Netronome, Mellanox) — real WiFi/BT/GPU
-hardware (MediaTek, Marvell, Atheros, AMD, Intel, NVIDIA) is untouched. See `ROADMAP.md` for
-what's still deliberately not done (NVIDIA proprietary, Secure Boot, etc.).
+See `ROADMAP.md` for what's still deliberately not done (NVIDIA proprietary, Secure Boot, etc.).
 
 Boot in **UEFI mode**: legacy BIOS is not supported (the GRUB build this project ships has
 no BIOS/i386-pc modules). Each ISO has three GRUB entries: normal, *copy to RAM* (loads the
@@ -43,12 +49,8 @@ the real system starts).
 ## System specifications
 
 * **Kernel:** monolithic Linux 7.2.6 with drivers for almost everything built in
-  (`kernel_7.2.6-full.config`, over 3,200 options: Wi-Fi, Bluetooth, Intel/AMD/NVIDIA-open
-  graphics, storage, sound, laptop hardware, exFAT/NTFS/btrfs/XFS, and a working nftables
-  firewall). Built by `tools/kernel-full/`; `kernel_7.2.6.config` is the original, smaller
-  config. Firmware comes from nixpkgs' `linux-firmware`/`sof-firmware`, fetched by
-  `tools/firmware-overlay/` with `goget` itself, and is loaded by the drivers from the
-  initramfs while the kernel starts.
+  (`kernel_7.2.6-full.config`). Built by `tools/kernel-full/`; `kernel_7.2.6.config` is the original,
+  smaller config. No firmware is bundled.
 * **Live boot:** a small busybox initramfs (`tools/live-image/`) finds the medium
   (also inside an ISO file on a Ventoy stick), mounts `/live/rootfs.squashfs`, adds a
   tmpfs overlay and switches to systemd. It can also unlock a LUKS-encrypted installed
@@ -57,34 +59,18 @@ the real system starts).
   `/bin/bash` and `/bin/sh`. BSD tar (`bsdtar`) and friends are not installed: GNU tar is the tar.
 * **Init:** systemd 261 (PID 1, with journald, udevd and logind). The base image's own
   services are ordinary systemd units in `/etc/systemd/system/` — see "Services" below.
-* **Base:** a glibc userland with GNU bash, coreutils, tar, sed and gawk. Portage and the Gentoo tree are
-  gone (since 1.0): `goget` is the only package manager, for the base system's own boot
-  tooling as well as everything installed afterward — there is no host-distro package
-  manager dependency anywhere in this project, including at build time (see "Building the ISO").
-* **Networking:** NetworkManager (`NetworkManager.service`).
-* **Everyday hardware and services:** Bluetooth (bluez), audio (PipeWire/WirePlumber,
-  system-wide), time sync (chrony), power profiles (`powerprofilesctl`), printing (CUPS),
-  firmware updates (`fwupdmgr`), Flatpak (Flathub added automatically at install), and a
-  default-deny-inbound nftables firewall — all systemd services, fetched from
-  nixpkgs by `tools/base-overlay/`. **systemd-logind** provides session/seat tracking and
-  `loginctl suspend` even without a desktop; **polkit** authorizes privileged actions for
-  NetworkManager, UDisks2, power-profiles-daemon and CUPS. None of this needs a desktop
-  environment — it's all present in the console-only image.
+* **Base:** a glibc userland with GNU bash, coreutils, tar, sed and gawk, plus the C toolchain `get`
+  needs. Portage and the Gentoo tree are gone; `tools/live-image/strip-live.sh` removes docs, man pages,
+  translations, the Go toolchain and other bloat from the image.
+* **Networking:** NetworkManager (`NetworkManager.service`), only so the installer and `get` can fetch.
 * **Installer:** `systemlinux-install`, an interactive terminal tool (no GUI) — erase a
   whole disk, or install onto an existing partition you already freed up yourself (the safe
   way to dual-boot: no automatic resizing). Optional LUKS full-disk encryption. The
   Handbook documents the same steps by hand, for anyone who'd rather not trust a script (or
   can't run one).
-* **Updates:** `goget upgrade` fetches the newest Ed25519-signed image (`latest.json`, SHA-256 per file),
-  adds it to GRUB as a one-shot trial and returns to the old image if it fails to boot. The
-  persistent layer (`/persist`) keeps your files and settings across updates.
-* **Packages:** `goget` installs prebuilt, signed nixpkgs packages (cache.nixos.org) with their dependencies into `/nix/store`,
-  exposed through per-user and system profiles with generations: `goget install|remove|list|find|update|run|shell|apply|generations|rollback|gc|channel`.
-  `owner/repo` names build from GitHub / GitLab / Codeberg source. `goget graphics` adds GPU drivers for Nix programs.
-* **Boot/disk tools:** GRUB 2.12 (UEFI x86_64 only), `efibootmgr`, `dosfstools`,
-  util-linux, e2fsprogs, `cryptsetup` (for LUKS). GRUB, efibootmgr, dosfstools and cryptsetup
-  are all fetched from nixpkgs by `goget` itself at build time — not from any host distro's
-  package manager.
+* **Packages:** `get URL` builds a source tarball and installs it (see above). There is no other package manager.
+* **Boot/disk tools:** GRUB (UEFI x86_64 only), `efibootmgr`, `dosfstools`, util-linux, e2fsprogs,
+  `cryptsetup` (for LUKS). `build_iso.sh` copies these from the build host (with their libraries).
 
 ## Services
 
@@ -94,16 +80,11 @@ systemd starts everything; use the usual tools (as root):
 systemctl status [unit]             # what is running (and what failed)
 journalctl -b [-u unit]             # this boot's log, or one service's
 systemctl start|stop|restart <unit>
-systemctl list-timers               # goget-check and the trial-boot check
 reboot | poweroff | halt
 ```
 
-The base image's units live in `/etc/systemd/system/` (sources in
-`tools/base-overlay/session/etc/systemd/system/`): `polkit`, `bluetooth`, `chronyd`,
-`power-profiles-daemon`, `audio` (system-wide PipeWire), `cups`, `fwupd` and `nftables`, plus
-two timers: `goget-check.timer` (runs `goget upgrade --check` every 12h; it only looks, never
-installs) and `systemlinux-boot-good.timer` (a minute after boot, makes a trial image from
-`goget upgrade` GRUB's default). Add your own units there and `systemctl enable` them.
+The live image ships no extra services beyond systemd and NetworkManager. Add your own units under
+`/etc/systemd/system/` and `systemctl enable` them.
 
 The live ISO logs root in on tty1 automatically; an installed system asks for a login. Add
 `console=ttyS0` to the kernel command line for a login prompt on the first serial port, and
@@ -111,27 +92,20 @@ use the *debug* GRUB entry (or drop `quiet`) to see systemd's boot messages.
 
 ## Building the ISO
 
-Run on any Linux host with `grub2`, `xorriso`, `mtools`, `squashfs-tools` and `cpio` on
-`PATH` — install them with your own package manager (e.g. `emerge sys-boot/grub
-app-cdr/xorriso sys-fs/mtools sys-fs/squashfs-tools app-arch/cpio` on Gentoo, `apt install
-grub2 xorriso mtools squashfs-tools cpio` on Debian, or the equivalent elsewhere). No
-particular host distro is required for anything else: GRUB/efibootmgr/dosfstools/fastfetch
-for the *target* image, the firmware overlay, and the base services overlay are all fetched
-straight from nixpkgs by `goget` itself, not from a host package manager.
+Run on any Linux host with `grub`, `xorriso`, `mtools`, `squashfs-tools`, `cpio`, `busybox`,
+`cryptsetup`, `efibootmgr` and `dosfstools` on `PATH` (install them with your own package manager;
+see the message `build_iso.sh` prints if something is missing). The installer's boot tools are
+copied from the host into the image.
 
 ```sh
 ./build_iso.sh    # systemlinux-v1.2.iso
 ```
 
-The script builds `goget` and (once) the full kernel, installs them into
-`rootfs/`, links `init` to systemd, fixes the D-Bus launch helper permissions, brands
-the image with `goget provision`, fetches GRUB/efibootmgr/dosfstools/fastfetch from nixpkgs
-(checking nothing against the tracked `rootfs/` — these land in a cached, gitignored work
-directory, merged into the squashfs stage only), builds the firmware overlay and the base
-services overlay (Bluetooth/audio/chrony/power/printing/firewall/locales, also from
-nixpkgs). It then compresses everything into `rootfs.squashfs` (zstd), builds the small
-initramfs (which now also carries `cryptsetup`, for LUKS-encrypted installs), and masters
-the ISO with `grub-mkrescue`.
+The script builds (once) the full kernel, installs `get` into `rootfs/`, links `init` to systemd,
+fixes the D-Bus launch helper permissions, brands the image with `systemlinux-provision`, copies the
+installer and its boot tools into the squashfs stage, strips the stage with
+`tools/live-image/strip-live.sh`, compresses everything into `rootfs.squashfs` (zstd), builds the small
+initramfs (busybox + `cryptsetup`) and masters the ISO with `grub-mkrescue`.
 
 ## Installing to disk
 
@@ -144,9 +118,8 @@ the ISO with `grub-mkrescue`.
    an existing partition you've already freed up yourself (shrink Windows or another Linux
    first, with their own tools) is the other — there is no automatic resizing.
 3. The disk gets a 512 MB EFI partition and one ext4 (optionally LUKS-encrypted) partition
-   holding the system images, GRUB and your files (`/persist`). Update later with `goget
-   upgrade` (add `--check` to only look); a new image boots as a trial and the previous one
-   is picked again automatically if it fails. Older images can be chosen from the GRUB menu.
+   holding the system images, GRUB and your files (`/persist`). Images live under
+   `/boot/images/<version>/` and are listed in the GRUB menu.
 
 The full guide, including troubleshooting and recovery, is the Handbook on the website.
 
@@ -164,28 +137,18 @@ The full guide, including troubleshooting and recovery, is the Handbook on the w
 * **Secure Boot is not supported.** The kernel is structurally ready for it (module
   signing, EFI stub, lockdown LSM are all enabled), but there is no shim/MOK signing
   pipeline in this repo yet — Secure Boot must be turned off in firmware to boot this ISO.
-* Programs from nixpkgs that need OpenGL/Vulkan need `sudo goget graphics` once.
-* Only `en_US.UTF-8` is pre-baked; see `/etc/profile.d/locale.sh` in `tools/base-overlay/`
-  for how to add more from the `glibc-locales` archive. The installer/website UI itself is
-  English-only — no translations yet.
-* `fcitx5` is installed but not auto-started (there's no desktop session to launch it from) —
-  run `fcitx5` by hand, or from a window manager's own startup file, once one is installed via
-  `goget`.
+* Only `C.UTF-8` is available: locale packs are deliberately left out of the minimal image.
 * A week of daily use on real hardware, and real hardware validation of suspend/resume,
   lid/power keys and battery/brightness, hasn't happened yet — see `ROADMAP.md`.
 
 ## Repository layout
 
 ```text
-├── goget/                # package manager (Go), README inside; includes `goget provision`
-├── tools/base-overlay/   # builds the base services overlay (systemd units for Bluetooth, audio, chrony, power,
-│                         #   printing, fwupd, Flatpak, firewall, locales) and ships
-│                         #   systemlinux-install, systemlinux-grubcfg, systemlinux-post
-├── tools/overlay-common/ # shared overlay helpers (mkcpio.py, goget-profile.sh, strip-gentoo.sh)
-├── tools/imagesign/      # signs update indexes (latest.json)
+├── get                   # POSIX sh: download a source tarball, build and install it
+├── tools/installer/      # systemlinux-install, systemlinux-grubcfg, systemlinux-post, systemlinux-provision, preset
+├── tools/overlay-common/ # shared helpers (copy-bin.sh, strip-gentoo.sh)
 ├── tools/kernel-full/    # builds the full-driver kernel (extra-config.txt applied to the base config)
-├── tools/firmware-overlay/ # linux-firmware/sof-firmware from nixpkgs, xz-compressed
-├── tools/live-image/     # live initramfs (busybox + cryptsetup + init script)
+├── tools/live-image/     # live initramfs (busybox + cryptsetup + init script) and strip-live.sh
 ├── website/index.html    # project site + Handbook
 ├── build_iso.sh           # ISO build pipeline
 ├── kernel_7.2.6.config     # original kernel configuration

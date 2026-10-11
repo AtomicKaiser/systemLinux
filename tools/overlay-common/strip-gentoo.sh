@@ -1,6 +1,6 @@
 #!/bin/bash
-# Remove Portage and the Gentoo-specific tooling from a staged image (systemLinux 0.6: packages come from
-# `goget`, not from emerge).
+# Remove Portage and the Gentoo-specific tooling from a staged image (systemLinux: software comes from
+# `get`, not from emerge).
 # usage: strip-gentoo.sh STAGE     (works on any directory; run under fakeroot when the image needs root ownership)
 set -euo pipefail
 S=${1:?usage: strip-gentoo.sh STAGE}

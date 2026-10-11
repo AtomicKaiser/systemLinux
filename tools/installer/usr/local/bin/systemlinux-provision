@@ -1,0 +1,57 @@
+#!/bin/sh
+# Brand a system root (identity files + login banner) and optionally create its first user.
+# usage: systemlinux-provision [--user NAME] [--no-sudo] ROOT   (run as root; with --user the
+#        password is read from stdin, twice: password, then confirmation)
+set -eu
+BRAND=systemLinux
+VERSION=1.2
+USERN='' SUDO=1
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --user) USERN=${2:?--user needs a name}; shift 2 ;;
+        --no-sudo) SUDO=0; shift ;;
+        -h|--help) sed -n '2,4p' "$0"; exit 0 ;;
+        -*) echo "systemlinux-provision: unknown option $1" >&2; exit 2 ;;
+        *) break ;;
+    esac
+done
+[ $# -eq 1 ] || { sed -n '2,4p' "$0" >&2; exit 2; }
+ROOT=$1
+[ "$(id -u)" = 0 ] || { echo "systemlinux-provision: must run as root" >&2; exit 1; }
+[ -d "$ROOT/etc" ] || { echo "systemlinux-provision: $ROOT does not look like a system root (no etc/)" >&2; exit 1; }
+
+# replace (never write through) a file or symlink such as /etc/os-release -> ../usr/lib/os-release
+put() { mkdir -p "$(dirname "$ROOT/$1")"; rm -f "$ROOT/$1"; cat > "$ROOT/$1"; }
+
+printf '%s v%s GNU/Linux (\\l)\n' "$BRAND" "$VERSION" | put etc/issue
+printf '%s GNU/Linux release %s\n' "$BRAND" "$VERSION" | put etc/release
+printf 'NAME="%s"\nVERSION="%s"\nID=systemlinux\nPRETTY_NAME="%s v%s GNU/Linux"\nVERSION_ID="%s"\n' \
+    "$BRAND" "$VERSION" "$BRAND" "$VERSION" "$VERSION" | put etc/os-release
+put etc/profile.d/systemlinux.sh <<'BANNER'
+# systemLinux login banner
+if [ -t 1 ] && [ -z "${SYSTEMLINUX_BANNER:-}" ]; then
+	SYSTEMLINUX_BANNER=1
+	export SYSTEMLINUX_BANNER
+	printf '  systemLinux GNU/Linux\n\n'
+fi
+BANNER
+[ -n "$USERN" ] || exit 0
+
+case "$USERN" in *[!a-z0-9_-]*|'') echo "systemlinux-provision: invalid user name '$USERN'" >&2; exit 1 ;; esac
+IFS= read -r PW1; IFS= read -r PW2
+[ -n "$PW1" ] && [ "$PW1" = "$PW2" ] || { echo "systemlinux-provision: password empty or not confirmed" >&2; exit 1; }
+for g in wheel networkmanager; do
+    grep -q "^$g:" "$ROOT/etc/group" || groupadd -R "$ROOT" -r "$g"
+done
+if grep -q "^$USERN:" "$ROOT/etc/passwd"; then
+    usermod -R "$ROOT" -aG wheel,networkmanager "$USERN"
+else
+    SH=/bin/sh; [ -e "$ROOT/bin/bash" ] && SH=/bin/bash
+    useradd -R "$ROOT" -m -s "$SH" -G wheel,networkmanager "$USERN"
+fi
+printf '%s:%s\n' "$USERN" "$PW1" | chpasswd -R "$ROOT"
+if [ "$SUDO" = 1 ]; then
+    mkdir -p "$ROOT/etc/sudoers.d"
+    grep -qsx '%wheel ALL=(ALL:ALL) ALL' "$ROOT/etc/sudoers.d/10_wheel" || echo '%wheel ALL=(ALL:ALL) ALL' >> "$ROOT/etc/sudoers.d/10_wheel"
+    chmod 0440 "$ROOT/etc/sudoers.d/10_wheel"
+fi

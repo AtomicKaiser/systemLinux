@@ -1,17 +1,21 @@
 # systemLinux roadmap (a distribution you can daily-drive)
 
+> **Refactor note:** `goget` (the Go package manager, with `goget upgrade` image updates and the nixpkgs-based
+> overlays for firmware, Bluetooth, audio, printing and so on) has been replaced by `get`, a POSIX `sh` script
+> that builds a source tarball. The live ISO is now minimal installer media only: kernel plus the bare
+> minimum to run `systemlinux-install`. Items below that mention goget, firmware or the removed services
+> are historical. Follow-ups: image updates and a firmware package would need new designs.
+
 1.0 through 1.2 together mean: install it on a laptop, use it every day for browsing, mail, media, calls and
 development, and update it without fear. Status is honest: done means tested (in a VM, or here,
-a real rebuilt kernel and a real `goget install` against live nixpkgs), not just written. Items
+a real rebuilt kernel), not just written. Items
 that fundamentally need real hardware or real UEFI firmware to verify are marked as such and left
 open, not checked off on faith.
 
 ## Done (0.4 - 0.6)
 - Live console system, native CLI installer (`systemlinux-install`), persistent installs, signed
-  image updates with rollback (`goget upgrade`)
+  image updates with rollback (`goget upgrade`, since removed)
 - Full-driver kernel, firmware, Wi-Fi via NetworkManager
-- goget as the package manager: nixpkgs binaries with full dependency-closure resolution, no host
-  distro package manager involved anywhere, including at build time
 
 ## 1.1: minimal-only, no GUI installer, everyday hardware
 The GNOME live edition and its GTK4 graphical installer are gone entirely — one console-only ISO,

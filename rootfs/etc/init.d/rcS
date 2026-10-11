@@ -7,5 +7,5 @@ ip link set lo up
 
 echo "=================================================="
 echo " Welcome to System Linux v0.1                     "
-echo " Powered by: goget (Source-First Package Manager) "
+echo " Powered by: get (source tarball installer) "
 echo "=================================================="
