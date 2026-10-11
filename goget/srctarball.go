@@ -12,7 +12,7 @@ type srctarballResult int
 
 const (
 	srctarballOK       srctarballResult = iota // dir/tag are set
-	srctarballFallback                          // no tagged release, or the tarball path failed for
+	srctarballFallback                         // no tagged release, or the tarball path failed for
 	// some other reason -- caller should fall back to gitSync unconditionally.
 )
 

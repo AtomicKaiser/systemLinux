@@ -96,7 +96,7 @@ func hostGlibcVersion() string {
 type binaryLibcT int
 
 const (
-	libcStatic  binaryLibcT = iota // no dynamic interpreter -- libc compatibility doesn't apply
+	libcStatic binaryLibcT = iota // no dynamic interpreter -- libc compatibility doesn't apply
 	libcGlibc
 	libcMusl
 	libcUnknown // has an interpreter, but not one recognized

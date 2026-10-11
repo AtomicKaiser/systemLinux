@@ -11,9 +11,9 @@ import (
 type checksumResult int
 
 const (
-	checksumOK        checksumResult = iota // a checksum file was found and it matched
-	checksumMismatch                        // a checksum file was found but did NOT match -- hard fail
-	checksumMissing                         // no checksum file found (or no entry for this asset) -- warn and continue
+	checksumOK       checksumResult = iota // a checksum file was found and it matched
+	checksumMismatch                       // a checksum file was found but did NOT match -- hard fail
+	checksumMissing                        // no checksum file found (or no entry for this asset) -- warn and continue
 )
 
 type checksumCandidate struct {
