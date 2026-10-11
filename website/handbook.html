@@ -34,7 +34,7 @@ table{border-collapse:collapse} td,th{border:1px solid #999;padding:.2em .5em;te
     </ol></aside>
     <article>
       <div class="chapter" id="hb-1"><h2>1. Make a bootable USB stick</h2>
-        <p>Download the ISO and check it against the SHA-256 on the <a href="https://github.com/tortr-rs/systemLinux/releases/tag/v2.0">release page</a>. Then copy it onto a <strong>Ventoy</strong> stick, or write it straight to a stick (this erases the stick):</p>
+        <p>Download the ISO and check it against the SHA-256 on the <a href="https://github.com/tortr-rs/systemLinux/releases/tag/v2.0.0">release page</a>. Then copy it onto a <strong>Ventoy</strong> stick, or write it straight to a stick (this erases the stick):</p>
         <pre class="term">sudo dd if=systemLinux-2.0-x86_64.iso of=/dev/sdX bs=4M status=progress conv=fsync</pre>
         <p>Replace <code>/dev/sdX</code> with the stick (check with <code>lsblk</code>). On Windows use Rufus in <em>DD image</em> mode or balenaEtcher.</p></div>
 
