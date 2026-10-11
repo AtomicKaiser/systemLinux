@@ -2,7 +2,8 @@
 # systemLinux ISO build: a minimal live installer ISO (small initramfs + /live/rootfs.squashfs, mounted
 # with an overlayfs; nothing is loaded into a RAM disk): the full-driver kernel plus the bare minimum
 # needed to run the installer (systemd, NetworkManager, disk/boot tools, `get`). No firmware, desktop,
-# daemons, docs or locales. Software is added later with `get` (build from a source tarball).
+# daemons, docs, locales, compilers or language runtimes. After installing, `get --profile build-toolchain`
+# (and common-build-deps, lang-runtimes, ...) adds the build stack; `get URL` builds source tarballs.
 #
 #   ./build_iso.sh    -> systemlinux-v1.2.iso  (root shell, console only, installable with the handbook)
 #
@@ -20,6 +21,7 @@ WORKSPACE=$BUILD_DIR/iso_workspace
 # the "full" kernel is the same Linux 7.2.6 with drivers for almost everything built in
 KERNEL=${KERNEL:-$BUILD_DIR/tools/kernel-full/vmlinuz-7.2.6-full}
 IMAGE_VERSION=$(cat "$BUILD_DIR/VERSION")
+PROFILES_OUT=${PROFILES_OUT:-$BUILD_DIR/profiles-out}
 ISO=${ISO:-$BUILD_DIR/systemlinux-v$IMAGE_VERSION.iso}
 cd "$BUILD_DIR"
 # fail early, with the fix, instead of halfway through the kernel build
@@ -45,6 +47,7 @@ if [ ! -f "$KERNEL" ]; then "$BUILD_DIR/tools/kernel-full/build-kernel.sh"; fi
 
 echo "=== [2/7] INSTALLING get AND init LINKS INTO ROOTFS ==="
 sudo install -Dm755 ./get "$ROOTFS/usr/local/bin/get"
+sudo install -Dm755 ./tools/validate-build-ready.sh "$ROOTFS/usr/local/bin/validate-build-ready"
 sudo rm -f "$ROOTFS/init" "$ROOTFS/sbin/init" "$ROOTFS/sbin/lenine"
 sudo ln -sf usr/lib/systemd/systemd "$ROOTFS/init"
 sudo ln -sf ../lib/systemd/systemd "$ROOTFS/sbin/init"
@@ -100,6 +103,8 @@ sudo ln -sf "$(basename "$MKFS")" "$STAGE$(dirname "$MKFS")/mkfs.vfat"
 sudo cp -a "$BUILD_DIR/tools/installer/." "$STAGE/"
 sudo chmod 755 "$STAGE"/usr/local/bin/systemlinux-*
 sudo "$BUILD_DIR/tools/live-image/strip-live.sh" "$STAGE"
+# the build toolchain, build dependencies and language runtimes are post-install profiles, not live media
+sudo "$BUILD_DIR/tools/profiles/profiles.sh" strip "$STAGE"
 echo "$IMAGE_VERSION" | sudo tee "$STAGE/usr/share/systemlinux/image-version" >/dev/null
 sudo install -Dm644 "$KERNEL" "$STAGE/boot/vmlinuz"
 sudo mksquashfs "$STAGE" "$WORKSPACE/live/rootfs.squashfs" -comp zstd -Xcompression-level 19 -b 1M -noappend -no-xattrs
@@ -144,7 +149,9 @@ menuentry "systemLinux $IMAGE_VERSION (debug shell)" {
 GRUBEOF
 "$GRUB_SCRIPT_CHECK" "$WORKSPACE/boot/grub/grub.cfg"
 
-echo "=== [7/7] MASTERING ISO ==="
+echo "=== [7/7] MASTERING ISO AND PACKING PROFILES ==="
+# profile-*.tar.xz (+ .sha256/.requires): upload them next to the ISO in the release; `get --profile NAME` installs them
+ROOTFS=$ROOTFS "$BUILD_DIR/tools/profiles/profiles.sh" build "$PROFILES_OUT"
 "$GRUB_MKRESCUE" -o "$ISO" "$WORKSPACE"
 sudo rm -rf "$WORKSPACE"
 sha256sum "$ISO"

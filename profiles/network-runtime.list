@@ -1,0 +1,11 @@
+@keep
+@requires base-system
+usr/bin/curl
+usr/bin/wget
+usr/bin/tar
+usr/bin/xz
+usr/bin/bzip2
+usr/bin/gzip
+usr/share/ca-certificates
+etc/ssl/certs
+etc/ca-certificates.conf

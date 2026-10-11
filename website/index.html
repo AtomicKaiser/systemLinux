@@ -299,7 +299,12 @@ footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
         <p>Use <code>get</code> to build software from a source tarball:</p>
 <pre class="term"><span class="p">$</span> sudo get https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz         <span class="c"># into /usr/local</span>
 <span class="p">$</span> get -p "$HOME/.local" https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz   <span class="c"># into your home, no sudo</span></pre>
-        <p>See <code>get --help</code> for the prefix, staging and configure options.</p></div>
+        <p>The live ISO has no compiler. Add the build stack from profiles first (downloaded from this image&rsquo;s release):</p>
+<pre class="term"><span class="p">$</span> sudo get --profile build-toolchain
+<span class="p">$</span> sudo get --profile common-build-deps     <span class="c"># cmake, ninja, meson, autotools, pkgconf</span>
+<span class="p">$</span> sudo get --profile lang-runtimes         <span class="c"># Perl, Python, Go</span>
+<span class="p">$</span> validate-build-ready                 <span class="c"># compiles autotools, CMake and Meson test projects</span></pre>
+        <p>Then build anything from a source tarball, for example <code>get https://ftp.gnu.org/gnu/coreutils/coreutils-9.5.tar.xz</code> or <code>get -p "$HOME/.local" https://sqlite.org/2024/sqlite-autoconf-3460000.tar.gz</code>. CMake and Meson projects use the installed <code>cmake</code> and <code>meson</code> directly. See <code>get --help</code> for the prefix, staging and configure options.</p></div>
 
       <div class="chapter" id="hb-8"><h3>8. Updating the system</h3>
         <p>There is no in-place updater: to move to a newer systemLinux, write the new ISO to a stick and run <code>systemlinux-install</code> again (onto a new partition, or the same one).</p></div>

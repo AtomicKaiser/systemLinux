@@ -2,12 +2,18 @@
 # get: download a source tarball, extract it, build it and install it.
 #
 # usage: get [options] URL
+#        get --profile NAME [--root DIR] [--url BASE]
 #   -p, --prefix DIR    install prefix (default: /usr/local)
 #   -d, --destdir DIR   stage the install under DIR (make install DESTDIR=DIR)
 #   -s, --srcdir NAME   directory inside the tarball to build (default: its only top-level directory)
 #   -j, --jobs N        parallel make jobs (default: number of CPUs)
 #   -c, --configure-args "ARGS"   extra arguments for ./configure
 #   -k, --keep          keep the temporary work directory (default: remove it)
+#   -P, --profile NAME  install a package profile (build-toolchain, common-build-deps, lang-runtimes,
+#                       desktop-runtime, ...) and the profiles it requires, instead of building a tarball
+#   -r, --root DIR      with --profile: unpack under DIR (default: /)
+#   -u, --url BASE      with --profile: where profile-NAME.tar.xz lives
+#                       (default: $GET_PROFILE_URL, or this image's GitHub release)
 #   -h, --help          show this help
 #
 # Supported archives: .tar.gz .tgz .tar.bz2 .tbz2 .tar.xz .txz .tar
@@ -16,13 +22,14 @@
 #   get https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz
 #   get -p "$HOME/.local" https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz
 #   get -d /tmp/stage -c "--disable-nls" https://example.org/foo-1.0.tar.xz
+#   get --profile build-toolchain && get --profile common-build-deps
 set -eu
 
-PREFIX=/usr/local DESTDIR_ARG='' SRCDIR='' JOBS='' CONFARGS='' KEEP=0 URL=''
+PREFIX=/usr/local DESTDIR_ARG='' SRCDIR='' JOBS='' CONFARGS='' KEEP=0 URL='' PROFILE='' ROOT=/ BASE=''
 WORK=''
 
 die() { printf 'get: %s\n' "$*" >&2; exit 1; }
-usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; }
 cleanup() {
     if [ -n "$WORK" ] && [ -d "$WORK" ]; then
         if [ "$KEEP" = 1 ]; then printf 'get: work directory kept: %s\n' "$WORK" >&2; else rm -rf "$WORK"; fi
@@ -36,6 +43,9 @@ while [ $# -gt 0 ]; do
         -s|--srcdir) [ $# -ge 2 ] || die "$1 needs an argument"; SRCDIR=$2; shift 2 ;;
         -j|--jobs) [ $# -ge 2 ] || die "$1 needs an argument"; JOBS=$2; shift 2 ;;
         -c|--configure-args) [ $# -ge 2 ] || die "$1 needs an argument"; CONFARGS=$2; shift 2 ;;
+        -P|--profile) [ $# -ge 2 ] || die "$1 needs an argument"; PROFILE=$2; shift 2 ;;
+        -r|--root) [ $# -ge 2 ] || die "$1 needs an argument"; ROOT=$2; shift 2 ;;
+        -u|--url) [ $# -ge 2 ] || die "$1 needs an argument"; BASE=$2; shift 2 ;;
         -k|--keep) KEEP=1; shift ;;
         -h|--help) usage; exit 0 ;;
         --) shift; break ;;
@@ -43,6 +53,62 @@ while [ $# -gt 0 ]; do
         *) break ;;
     esac
 done
+# fetch URL OUTFILE
+fetch() {
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL --retry 2 -o "$2" "$1" || return 1
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q --tries=3 -O "$2" "$1" || return 1
+    else
+        die "need curl or wget to download"
+    fi
+}
+
+# install_profile NAME DIR [optional]: install a profile (and, first, the ones it requires) into ROOT
+install_profile() {
+    case "$1" in ''|*[!A-Za-z0-9_-]*) die "invalid profile name: $1" ;; esac
+    case " $DONE " in *" $1 "*) return 0 ;; esac
+    DONE="$DONE $1"
+    printf 'get: profile %s\n' "$1"
+    if ! fetch "$BASE/profile-$1.tar.xz" "$2/p.tar.xz"; then
+        [ -z "${3:-}" ] || { printf 'get: warning: required profile %s not published, skipping\n' "$1" >&2; return 0; }
+        die "cannot download profile $1 from $BASE"
+    fi
+    fetch "$BASE/profile-$1.tar.xz.sha256" "$2/p.sha256" || die "cannot download the checksum of profile $1"
+    want=$(sed -n '1s/[[:space:]].*//p' "$2/p.sha256")
+    have=$(sha256sum "$2/p.tar.xz" | sed 's/[[:space:]].*//')
+    if [ -z "$want" ] || [ "$want" != "$have" ]; then die "checksum mismatch for profile $1"; fi
+    if fetch "$BASE/profile-$1.requires" "$2/p.requires" 2>/dev/null; then
+        while read -r req; do
+            [ -z "$req" ] || install_profile "$req" "$2" optional
+        done < "$2/p.requires"
+    fi
+    mkdir -p "$ROOT"
+    tar -xJf "$2/p.tar.xz" -C "$ROOT" || die "extracting profile $1 failed (run as root to install into $ROOT)"
+}
+
+if [ -n "$PROFILE" ]; then
+    [ $# -eq 0 ] || die "--profile takes no URL"
+    command -v tar >/dev/null 2>&1 || die "tar is required"
+    command -v xz >/dev/null 2>&1 || die "xz is required"
+    command -v sha256sum >/dev/null 2>&1 || die "sha256sum is required"
+    if [ -z "$BASE" ]; then
+        BASE=${GET_PROFILE_URL:-}
+        if [ -z "$BASE" ]; then
+            VER=$(cat /usr/share/systemlinux/image-version 2>/dev/null) || die "no --url given and no image version found"
+            BASE=https://github.com/tortr-rs/systemLinux/releases/download/v$VER
+        fi
+    fi
+    BASE=${BASE%/}
+    DONE=''
+    WORK=$(mktemp -d "${TMPDIR:-/tmp}/get.XXXXXX") || die "cannot create a work directory"
+    trap cleanup EXIT
+    trap 'exit 130' INT TERM HUP
+    install_profile "$PROFILE" "$WORK"
+    ldconfig -r "$ROOT" 2>/dev/null || true
+    printf 'get: profile %s installed\n' "$PROFILE"
+    exit 0
+fi
 [ $# -ge 1 ] || { usage >&2; exit 2; }
 URL=$1; shift
 [ $# -eq 0 ] || die "only one URL is accepted"
@@ -75,13 +141,7 @@ trap cleanup EXIT
 trap 'exit 130' INT TERM HUP
 
 printf 'get: downloading %s\n' "$URL"
-if command -v curl >/dev/null 2>&1; then
-    curl -fsSL --retry 2 -o "$WORK/$file" "$URL" || die "download failed (curl)"
-elif command -v wget >/dev/null 2>&1; then
-    wget -q --tries=3 -O "$WORK/$file" "$URL" || die "download failed (wget)"
-else
-    die "need curl or wget to download"
-fi
+fetch "$URL" "$WORK/$file" || die "download failed"
 
 printf 'get: extracting %s\n' "$file"
 mkdir "$WORK/src"

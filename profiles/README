@@ -1,0 +1,6 @@
+Package profiles. One manifest per profile: NAME.list.
+  @requires NAME   install this profile first (dependency)
+  @keep            part of the base image (stays in the live ISO); listed so it can be reinstalled
+  anything else    a path (shell glob) relative to the image root; every other profile is
+                   stripped from the live ISO and published as profile-NAME.tar.xz
+Build with tools/profiles/build-profiles.sh; install on a running system with `get --profile NAME`.

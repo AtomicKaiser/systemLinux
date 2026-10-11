@@ -29,6 +29,8 @@ get -d /tmp/stage -c "--disable-nls" https://example.org/bar-2.0.tgz # staged un
 `get` runs `./configure --prefix=PREFIX` (if present), `make` and `make install`; it handles
 `.tar.gz`, `.tgz`, `.tar.bz2`, `.tar.xz` and `.tar`. See `get --help`.
 
+The live ISO deliberately has no compiler or build tools. They are **profiles** you add after installing.
+
 Website: `website/index.html` (also the Handbook) · Download: [GitHub release `v1.2`](https://github.com/tortr-rs/systemLinux/releases/tag/v1.2)
 
 | File | Size | RAM needed |
@@ -68,9 +70,50 @@ the real system starts).
   way to dual-boot: no automatic resizing). Optional LUKS full-disk encryption. The
   Handbook documents the same steps by hand, for anyone who'd rather not trust a script (or
   can't run one).
-* **Packages:** `get URL` builds a source tarball and installs it (see above). There is no other package manager.
+* **Packages:** `get` is the package tool: `get URL` builds a source tarball, and `get --profile NAME` installs a
+  package profile (see "Package profiles"). There is no other package manager.
 * **Boot/disk tools:** GRUB (UEFI x86_64 only), `efibootmgr`, `dosfstools`, util-linux, e2fsprogs,
   `cryptsetup` (for LUKS). `build_iso.sh` copies these from the build host (with their libraries).
+
+## Package profiles
+
+Profiles are the post-install way to get a full build environment without bloating the live media. Each
+manifest in `profiles/*.list` names the paths of one group; `tools/profiles/profiles.sh` strips those groups out
+of the live image and publishes them as `profile-NAME.tar.xz` (+ `.sha256`, `.requires`) beside the ISO.
+
+| Profile | Contents | Requires |
+|---|---|---|
+| `base-system` | sudo, pager/editors, zoneinfo, terminfo (stays in the base image) | |
+| `network-runtime` | curl, wget, tar, xz, bzip2, CA certificates (stays in the base image, `get` needs them) | base-system |
+| `build-toolchain` | gcc/g++, binutils, make, patch, glibc headers, crt files and static libs | base-system |
+| `common-build-deps` | cmake, ninja, meson, pkgconf, autoconf/automake/libtool/m4, bison, flex, gettext, texinfo, `.pc`/cmake data | build-toolchain |
+| `lang-runtimes` | Perl, Python, Go | common-build-deps |
+| `desktop-runtime` | optional: fonts, icons, themes, mime/X11 data | network-runtime |
+
+Rust is not part of the image yet; install it after `build-toolchain` with its own bootstrap
+(`curl -fsSL https://sh.rustup.rs | sh`) or build it from a source tarball with `get`.
+
+Generic workflow after installing the minimal base from the ISO:
+
+```sh
+sudo get --profile build-toolchain          # compilers + headers (downloads the profile for this image version)
+sudo get --profile common-build-deps        # cmake, ninja, meson, autotools, pkgconf, ...
+sudo get --profile lang-runtimes            # Perl, Python, Go, when a package needs them
+validate-build-ready                      # compiles autotools, CMake and Meson test projects; prints "build-ready: yes"
+```
+
+Then install software with `get` (an offline mirror works too: `GET_PROFILE_URL=http://host/dir get --profile …`):
+
+```sh
+sudo get https://ftp.gnu.org/gnu/coreutils/coreutils-9.5.tar.xz        # autotools, a large package
+get -p "$HOME/.local" https://ftp.gnu.org/gnu/hello/hello-2.12.tar.gz  # a small one, no root needed
+sudo get -c "--disable-docs" https://example.org/libfoo-1.2.tar.gz     # a library, with configure options
+sudo get https://sqlite.org/2024/sqlite-autoconf-3460000.tar.gz        # a library others build against
+```
+
+`get` runs `./configure` when a tarball has one; CMake and Meson projects are built by hand with the
+installed tools (`cmake -S . -B build -G Ninja && cmake --build build && cmake --install build`, or
+`meson setup build && meson install -C build`). A tarball with neither is built with plain `make`.
 
 ## Services
 
@@ -101,7 +144,8 @@ copied from the host into the image.
 ./build_iso.sh    # systemlinux-v1.2.iso
 ```
 
-The script builds (once) the full kernel, installs `get` into `rootfs/`, links `init` to systemd,
+It also writes `profiles-out/profile-*.tar.xz` for the release (upload them next to the ISO; `get --profile`
+downloads them from the release matching the image version). The script builds (once) the full kernel, installs `get` into `rootfs/`, links `init` to systemd,
 fixes the D-Bus launch helper permissions, brands the image with `systemlinux-provision`, copies the
 installer and its boot tools into the squashfs stage, strips the stage with
 `tools/live-image/strip-live.sh`, compresses everything into `rootfs.squashfs` (zstd), builds the small
@@ -145,6 +189,9 @@ The full guide, including troubleshooting and recovery, is the Handbook on the w
 
 ```text
 ├── get                   # POSIX sh: download a source tarball, build and install it
+├── profiles/             # package profile manifests (build-toolchain, common-build-deps, ...)
+├── tools/profiles/       # profiles.sh: pack profiles for release / strip them from the live ISO
+├── tools/validate-build-ready.sh # installed as validate-build-ready; checks an installed system can build autotools/CMake/Meson projects
 ├── tools/installer/      # systemlinux-install, systemlinux-grubcfg, systemlinux-post, systemlinux-provision, preset
 ├── tools/overlay-common/ # shared helpers (copy-bin.sh, strip-gentoo.sh)
 ├── tools/kernel-full/    # builds the full-driver kernel (extra-config.txt applied to the base config)
