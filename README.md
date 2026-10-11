@@ -160,7 +160,12 @@ as artifacts.
 2. Tag and push: `git tag v2.0 && git push origin v2.0` (`v2.0.0` also triggers it, but `get --profile` downloads
    from the release named `v` + `VERSION`, so prefer `v2.0`).
 3. `.github/workflows/release.yml` builds the ISO and creates the GitHub Release with the ISO, profiles,
-   `SHA256SUMS` and the changelog entry as notes. The website links point at `releases/download/v2.0/`.
+   `SHA256SUMS` and the changelog entry as notes (it verifies the checksums first). The website links point at
+   `releases/download/v2.0/`.
+
+The full ISO build needs a real Linux host with sudo, ~30 GB of disk and the tools listed above
+(xorriso, mtools, pahole, ...); it is not verified in the restricted agent sandbox, so run `./build_iso.sh`
+locally or via the `Build ISO` workflow (`workflow_dispatch`) before pushing the tag.
 
 ## Installing to disk
 

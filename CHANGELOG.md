@@ -18,6 +18,8 @@
 ### Added
 - GitHub Actions: `build-iso.yml` builds the ISO and checksums; `release.yml` publishes a GitHub Release on a
   `v2.0` / `v2.0.0` tag.
+- Release assets: `systemLinux-2.0-x86_64.iso`, `systemLinux-2.0-x86_64.iso.sha256`, `SHA256SUMS` (covers the ISO and
+  the profile archives) and the `profile-NAME.tar.xz` / `.sha256` / `.requires` files that `get --profile NAME` installs.
 - `make iso` as a shortcut for `./build_iso.sh`.
 - Website: what's new section, 2.0 download and checksum links, `get` usage examples.
 
